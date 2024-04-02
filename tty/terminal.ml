@@ -19,6 +19,10 @@ let move_cursor x y = Escape_seq.cursor_position_seq x y ()
         over-writes any saved cursor position.
      - [Error `Unknown] *)
 let get_terminal_size ?(legacy = false) () =
+  let return rows cols =
+    try Ok (int_of_string rows, int_of_string cols)
+    with Failure _ -> Error `Interrupted
+  in
   let buf = Bytes.create 12 in
   let stdin_fd = Unix.descr_of_in_channel stdin in
   if legacy then (
@@ -41,6 +45,6 @@ let get_terminal_size ?(legacy = false) () =
           |> Bytes.to_string |> String.split_on_char ';'
         in
         match parts with
-        | [ "8"; rows; cols ] -> Ok (int_of_string rows, int_of_string cols)
-        | [ rows; cols ] -> Ok (int_of_string rows, int_of_string cols)
+        | [ "8"; rows; cols ] -> return rows cols
+        | [ rows; cols ] -> return rows cols
         | _ -> Error `Unsupported)
